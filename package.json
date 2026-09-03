@@ -4,13 +4,16 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "cd src && node index.js"
+    "start": "cd src && node index.js",
+    "format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx,css,md,json}\"",
+    "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,css,md,json}\""
   },
   "license": "MIT",
   "dependencies": {
     "bcrypt": "^5.1.1",
     "dotenv": "^17.4.2",
     "express": "^4.19.2",
+    "prettier": "3.9.6",
     "getenv": "^2.0.0",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.9.7"
