@@ -1,4 +1,6 @@
 const express = require("express");
+const morgan = require('morgan');
+require('dotenv').config();
 const { authRouter, setAuthUser } = require("./routes/authRouter.js");
 const orderRouter = require("./routes/orderRouter.js");
 const franchiseRouter = require("./routes/franchiseRouter.js");
@@ -7,6 +9,8 @@ const version = require("./version.json");
 const config = require("./config.js");
 
 const app = express();
+morgan.token('body', (req) => JSON.stringify(req.body));
+app.use(morgan(':method :url :status :response-time ms - :body'));
 app.use(express.json());
 app.use(setAuthUser);
 app.use((req, res, next) => {
