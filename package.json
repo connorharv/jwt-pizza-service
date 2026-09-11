@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/index.js",
     "format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx,css,md,json}\"",
-    "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,css,md,json}\""
+    "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,css,md,json}\"",
+    "test": "jest"
   },
   "license": "MIT",
   "dependencies": {
@@ -21,5 +22,9 @@
   },
   "allowScripts": {
     "bcrypt@5.1.1": true
+  },
+  "devDependencies": {
+    "jest": "^30.5.1",
+    "supertest": "^7.2.2"
   }
 }
