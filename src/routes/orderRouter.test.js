@@ -33,9 +33,8 @@ test('Get menu', async () => {
     expect(orderRes.status).toBe(200);
 })
 
-const item = { "title":"Student", "description": "No topping, no sauce, just carbs", "image":"pizza9.png", "price": 0.0001 };
-
 test('Add item to menu', async () => {
+    const item = { "title":"Student", "description": "No topping, no sauce, just carbs", "image":"pizza9.png", "price": 0.0001 };
     const addItemRes = await request(app).put('/api/order/menu')
         .set('Authorization', `Bearer ${testUserAuthToken}`)
         .send(item);
@@ -48,9 +47,8 @@ test('Get authenticated orders', async () => {
     expect(orderRes.status).toBe(200);
 })
 
-const order = {"franchiseId": 1, "storeId":1, "items":[{ "menuId": 1, "description": "Veggie", "price": 0.05 }]};
-
 test('Create order', async () => {
+    const order = {"franchiseId": 1, "storeId":1, "items":[{ "menuId": 1, "description": "Veggie", "price": 0.05 }]};
     const createOrderRes = await request(app).post('/api/order')
         .set('Authorization', `Bearer ${testUserAuthToken}`)
         .send(order);

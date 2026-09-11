@@ -47,10 +47,9 @@ test('Get user franchises with authorization', async () => {
 
 let newFranchiseId;
 
-const randFranchise = randomName();
-const newFranchise = {"name": randFranchise, "admins": [{"email": "f@jwt.com"}]};
-
 test('Create new franchise', async () => {
+    const randFranchise = randomName();
+    const newFranchise = {"name": randFranchise, "admins": [{"email": adminUser.email}]};
     const newFranchiseRes = await request(app).post('/api/franchise')
         .set('Authorization', `Bearer ${testUserAuthToken}`)
         .send(newFranchise);
