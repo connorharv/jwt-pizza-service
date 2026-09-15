@@ -280,6 +280,48 @@ class DB {
     }
   }
 
+  async getUsers(authUser, page=0,limit=10,nameFilter="*") {
+    if(page < 0 || limit < 0 ){
+      throw new StatusCodeError("Page and limit must be positive", 400);
+    }
+
+    if(nameFilter !== "*" && !/^[A-Za-z]*$/.test(nameFilter)){
+      throw new StatusCodeError("name must only contain letters", 400);
+    }
+
+    const connection = await this.getConnection();
+
+    const offset = page * limit;
+    nameFilter = nameFilter.replace(/\*/g, "%");
+
+    try {
+      let users = await this.query(
+          connection,
+          `SELECT id, name, email FROM user WHERE name LIKE ? LIMIT ${limit + 1} OFFSET ${offset}`,
+          [nameFilter]
+      );
+
+      const more = users.length > limit;
+      if (more) {
+        users = users.slice(0, limit);
+      }
+
+      // Get roles
+      for(const user of users){
+        user.roles = await this.query(
+            connection,
+            `SELECT role FROM userrole WHERE id=?`,
+            [user.id]
+        )
+      }
+
+      return [users, more];
+    } finally {
+      connection.end();
+    }
+
+  }
+
   async getFranchises(authUser, page = 0, limit = 10, nameFilter = "*") {
     const connection = await this.getConnection();
 
@@ -488,6 +530,42 @@ class DB {
       [config.db.connection.database],
     );
     return rows.length > 0;
+  }
+
+  async getUserById(userId) {
+    const connection = await this.getConnection();
+
+    try {
+      return await this.query(
+          connection,
+          `SELECT * FROM user WHERE id = ?`,
+          [userId]
+      );
+    } finally {
+      connection.end();
+    }
+  }
+
+  async deleteUser(userId) {
+    const connection = await this.getConnection();
+
+    try {
+      // Remove roles first
+      await this.query(
+          connection,
+          `DELETE FROM userRole WHERE userId = ?`,
+          [userId]
+      );
+
+      await this.query(
+          connection,
+          `DELETE FROM user WHERE id = ?`,
+          [userId]
+      );
+
+    } finally {
+      connection.end();
+    }
   }
 }
 
