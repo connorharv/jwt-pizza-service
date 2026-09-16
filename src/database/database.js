@@ -310,7 +310,7 @@ class DB {
       for(const user of users){
         user.roles = await this.query(
             connection,
-            `SELECT role FROM userrole WHERE id=?`,
+            `SELECT role FROM userRole WHERE userId=?`,
             [user.id]
         )
       }
