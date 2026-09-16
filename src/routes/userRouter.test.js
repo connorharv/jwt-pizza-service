@@ -36,10 +36,10 @@ test('list users unauthorized', async () => {
 test('list users', async () => {
     const [_, userToken] = await loginAdmin(request(app));
     const listUsersRes = await request(app)
-        .get('/api/user?limit=5')
+        .get('/api/user?limit=4')
         .set('Authorization', 'Bearer ' + userToken);
     expect(listUsersRes.status).toBe(200);
-    expect(listUsersRes.body.users.length).toBe(5);
+    expect(listUsersRes.body.users.length).toBe(4);
     expect(listUsersRes.body.users[0].roles.length).toBe(1);
 });
 
