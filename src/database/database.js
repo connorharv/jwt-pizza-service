@@ -501,20 +501,24 @@ class DB {
           await connection.query(statement);
         }
 
-        const adminExists = await this.query(
+        const existingAdmin = await this.query(
             connection,
             `SELECT id FROM user WHERE email = ?`,
             ["a@jwt.com"],
         );
 
-        if (adminExists.length === 0) {
-          const defaultAdmin = {
-            name: "常用名字",
-            email: "a@jwt.com",
-            password: "admin",
-            roles: [{ role: Role.Admin }],
-          };
-          this.addUser(defaultAdmin);
+        if (existingAdmin.length === 0) {
+          const hashedPassword = await bcrypt.hash("admin", 10);
+          const userResult = await this.query(
+              connection,
+              `INSERT INTO user (name, email, password) VALUES (?, ?, ?)`,
+              ["常用名字", "a@jwt.com", hashedPassword],
+          );
+          await this.query(
+              connection,
+              `INSERT INTO userRole (userId, role, objectId) VALUES (?, ?, ?)`,
+              [userResult.insertId, Role.Admin, 0],
+          );
         }
       } finally {
         connection.end();
