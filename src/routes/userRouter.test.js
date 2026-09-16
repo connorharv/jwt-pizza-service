@@ -34,7 +34,7 @@ test('list users unauthorized', async () => {
 });
 
 test('list users', async () => {
-    const [user, userToken] = await loginAdmin(request(app));
+    const [_, userToken] = await loginAdmin(request(app));
     const listUsersRes = await request(app)
         .get('/api/user?limit=5')
         .set('Authorization', 'Bearer ' + userToken);

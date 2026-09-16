@@ -4,10 +4,26 @@ import { defineConfig } from "eslint/config";
 import jest from "eslint-plugin-jest";
 
 export default defineConfig([
-  { files: ["**/*.{js,mjs,cjs}"], plugins: { js }, extends: ["js/recommended"], languageOptions: { globals: globals.node } },
+  {
+    files: ["**/*.{js,mjs,cjs}"],
+    plugins: { js },
+    extends: ["js/recommended"],
+    languageOptions: { globals: globals.node },
+    rules: {
+      "no-unused-vars": [
+        "error",
+        {
+          varsIgnorePattern: "^_",
+          argsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+        },
+      ],
+    },
+  },
   { files: ["**/*.js"], languageOptions: { sourceType: "commonjs" } },
   {
-    files: ['**/*.test.js', '**/*.spec.js'],
-    ...jest.configs['flat/recommended'],
+    files: ["**/*.test.js", "**/*.spec.js"],
+    ...jest.configs["flat/recommended"],
   },
 ]);
