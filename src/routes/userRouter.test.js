@@ -33,6 +33,8 @@ test('list users unauthorized', async () => {
     expect(listUsersRes.status).toBe(401);
 });
 
+let userId;
+
 test('list users', async () => {
     const [_, userToken] = await loginAdmin(request(app));
     const listUsersRes = await request(app)
@@ -40,6 +42,7 @@ test('list users', async () => {
         .set('Authorization', 'Bearer ' + userToken);
     expect(listUsersRes.status).toBe(200);
     expect(listUsersRes.body.users.length).toBe(4);
+    userId = listUsersRes.body.users[0].id;
     expect(listUsersRes.body.users[0].roles.length).toBe(1);
 });
 
@@ -100,7 +103,7 @@ test('update user authorized', async () => {
 
     const [_, userToken] = await loginAdmin(request(app));
     const updateUserRes = await request(app)
-        .put('/api/user/2')
+        .put(`/api/user/${userId}`)
         .set('Authorization', 'Bearer ' + userToken)
         .send(testUpdate);
     console.log(updateUserRes);
