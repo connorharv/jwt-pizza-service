@@ -2,7 +2,7 @@ const os = require('os');
 const config = require('./config');
 
 const activeUsers = new Map(); // userId -> lastSeenTimestamp
-const ACTIVE_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
+const ACTIVE_WINDOW_MS = 60 * 1000; // 1 minute
 
 const requestCounts = {}; // key: "METHOD path" -> { method, path, count }
 const latencies = {};     // key: "METHOD path" -> { method, path, sum, count }
@@ -16,9 +16,28 @@ let revenueTotal = 0;
 let pizzaLatencySum = 0;
 let pizzaLatencyCount = 0;
 
+function getCpuTimes() {
+    let idle = 0;
+    let total = 0;
+    for (const cpu of os.cpus()) {
+        for (const type in cpu.times) {
+            total += cpu.times[type];
+        }
+        idle += cpu.times.idle;
+    }
+    return { idle, total };
+}
+
+let previous = getCpuTimes();
+
 function getCpuUsagePercentage() {
-    const cpuUsage = os.loadavg()[0] / os.cpus().length;
-    return Number((cpuUsage * 100).toFixed(2));
+    const current = getCpuTimes();
+    const idleDiff = current.idle - previous.idle;
+    const totalDiff = current.total - previous.total;
+    previous = current;
+
+    if (totalDiff === 0) return 0;
+    return Number((100 * (1 - idleDiff / totalDiff)).toFixed(2));
 }
 
 function getMemoryUsagePercentage() {
@@ -125,8 +144,8 @@ function buildUserMetrics() {
 
 function buildAuthMetrics() {
     return [
-        createMetric('auth_attempts', authSuccessCount, '1', 'sum', 'asInt', { success: 'true' }),
-        createMetric('auth_attempts', authFailureCount, '1', 'sum', 'asInt', { success: 'false' }),
+        createMetric('auth_attempts', authSuccessCount, '1', 'sum', 'asInt', { success: 'success' }),
+        createMetric('auth_attempts', authFailureCount, '1', 'sum', 'asInt', { success: 'failure' }),
     ];
 }
 

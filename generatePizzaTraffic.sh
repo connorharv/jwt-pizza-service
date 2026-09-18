@@ -94,6 +94,60 @@ for i in 1 2 3; do
   simulate_diner $i
 done
 
+# --- Cycling users (1-5@jwt.com): active for a while, then go idle ---
+simulate_cycling_user() {
+  local user_id=$1
+  local email="${user_id}@jwt.com"
+  local first_cycle=true
+
+  while true; do
+    # Stagger the initial start so they don't all begin together
+    if [ "$first_cycle" = true ]; then
+      sleep $(( (user_id - 1) * 20 ))
+      first_cycle=false
+    fi
+
+    local active_secs=$(( RANDOM % 91 + 45 ))
+    local idle_secs=$(( RANDOM % 91 + 75 ))
+
+    # ---- ACTIVE phase ----
+    local token
+    token=$(login "$email" "password")
+    echo "[cycler $user_id] Login (active for ${active_secs}s)..." $( [ -z "$token" ] && echo "false" || echo "true" )
+
+    local end=$(( SECONDS + active_secs ))
+    local tick=0
+    while [ $SECONDS -lt $end ]; do
+      tick=$(( tick + 1 ))
+      result=$(execute_curl "$host/api/order -H \"Authorization: Bearer $token\"")
+      echo "[cycler $user_id] Checking orders..." $result
+
+      # Buy a pizza every third tick
+      if [ $(( tick % 3 )) -eq 0 ]; then
+        result=$(execute_curl "-X POST $host/api/order -H 'Content-Type: application/json' -d '{\"franchiseId\": 1, \"storeId\":1, \"items\":[{ \"menuId\": 1, \"description\": \"Veggie\", \"price\": 0.05 }]}'  -H \"Authorization: Bearer $token\"")
+        echo "[cycler $user_id] Bought a pizza..." $result
+      fi
+      sleep 10
+    done
+
+    # Odd-numbered users log out before going idle; even-numbered users just
+    # stop making requests while still holding a valid token.
+    if [ $(( user_id % 2 )) -eq 1 ]; then
+      result=$(execute_curl "-X DELETE $host/api/auth -H \"Authorization: Bearer $token\"")
+      echo "[cycler $user_id] Logging out..." $result
+    fi
+
+    # ---- IDLE phase (no requests) ----
+    echo "[cycler $user_id] Going idle for ${idle_secs}s..."
+    sleep $idle_secs
+  done &
+  pids+=($!)
+}
+
+for i in 1 2 3 4 5; do
+  simulate_cycling_user $i
+done
+
 # --- Failed pizza order (too many items), every ~90s instead of every 5 min ---
 while true; do
   token=$(login "d@jwt.com" "diner")
