@@ -78,3 +78,32 @@ test('delete user authorized', async () => {
     expect(deleteUserRes.status).toBe(200);
 })
 
+test('update user unauthorized', async () => {
+    // {"name":"常用名字", "email":"a@jwt.com", "password":"admin"}
+    const testUpdate = {
+        name: "test!",
+        email: "t@jwt.com",
+        password: "admin"
+    }
+    const updateUserRes = await request(app)
+       .put('/api/user/2')
+       .send(testUpdate);
+    expect(updateUserRes.status).toBe(401);
+});
+
+test('update user authorized', async () => {
+    const testUpdate = {
+        name: "test user",
+        email: "t@jwt.com",
+        password: "test"
+    }
+
+    const [_, userToken] = await loginAdmin(request(app));
+    const updateUserRes = await request(app)
+        .put('/api/user/2')
+        .set('Authorization', 'Bearer ' + userToken)
+        .send(testUpdate);
+    expect(updateUserRes.status).toBe(200);
+
+});
+
