@@ -103,6 +103,7 @@ test('update user authorized', async () => {
         .put('/api/user/2')
         .set('Authorization', 'Bearer ' + userToken)
         .send(testUpdate);
+    console.log(updateUserRes);
     expect(updateUserRes.status).toBe(200);
 
 });
