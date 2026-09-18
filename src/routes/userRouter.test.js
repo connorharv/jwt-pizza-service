@@ -82,7 +82,6 @@ test('delete user authorized', async () => {
 })
 
 test('update user unauthorized', async () => {
-    // {"name":"常用名字", "email":"a@jwt.com", "password":"admin"}
     const testUpdate = {
         name: "test!",
         email: "t@jwt.com",
@@ -106,7 +105,6 @@ test('update user authorized', async () => {
         .put(`/api/user/${userId}`)
         .set('Authorization', 'Bearer ' + userToken)
         .send(testUpdate);
-    console.log(updateUserRes);
     expect(updateUserRes.status).toBe(200);
 
 });
