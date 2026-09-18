@@ -1,9 +1,8 @@
 const os = require('os');
 const config = require('./config');
 
-// ---- In-memory metric state ----
 const activeUsers = new Map(); // userId -> lastSeenTimestamp
-const ACTIVE_WINDOW_MS = 5 * 60 * 1000; // consider "active" if seen in last 5 min
+const ACTIVE_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
 
 const requestCounts = {}; // key: "METHOD path" -> { method, path, count }
 const latencies = {};     // key: "METHOD path" -> { method, path, sum, count }
@@ -17,7 +16,6 @@ let revenueTotal = 0;
 let pizzaLatencySum = 0;
 let pizzaLatencyCount = 0;
 
-// ---- System metrics ----
 function getCpuUsagePercentage() {
     const cpuUsage = os.loadavg()[0] / os.cpus().length;
     return Number((cpuUsage * 100).toFixed(2));
@@ -30,7 +28,6 @@ function getMemoryUsagePercentage() {
     return Number(((usedMemory / totalMemory) * 100).toFixed(2));
 }
 
-// ---- Tracking functions (called from middleware.js / routers) ----
 function trackActiveUser(userId) {
     if (!userId) return;
     activeUsers.set(userId, Date.now());
@@ -45,14 +42,15 @@ function getActiveUserCount() {
 }
 
 function trackRequest({ method, path, statusCode, durationMs }) {
-    const key = `${method} ${path}`;
+    const key = `${method} ${path} ${statusCode}`;
 
-    if (!requestCounts[key]) requestCounts[key] = { method, path, count: 0 };
+    if (!requestCounts[key]) requestCounts[key] = { method, path, statusCode, count: 0 };
     requestCounts[key].count += 1;
 
-    if (!latencies[key]) latencies[key] = { method, path, sum: 0, count: 0 };
-    latencies[key].sum += durationMs;
-    latencies[key].count += 1;
+    const latencyKey = `${method} ${path}`;
+    if (!latencies[latencyKey]) latencies[latencyKey] = { method, path, sum: 0, count: 0 };
+    latencies[latencyKey].sum += durationMs;
+    latencies[latencyKey].count += 1;
 }
 
 function trackAuthAttempt(success) {
@@ -71,13 +69,10 @@ function trackPizzaPurchase(success, latencyMs, price) {
     pizzaLatencyCount++;
 }
 
-// ---- OTLP metric building ----
 function createMetric(metricName, metricValue, metricUnit, metricType, valueType, attributes) {
     attributes = { ...attributes, source: config.source };
 
     const dataPoint = {
-        // 64-bit int fields (asInt, timeUnixNano) are decimal strings in OTLP/JSON.
-        // asDouble fields (revenue, latency ms, percentages) stay as native numbers.
         [valueType]: valueType === 'asInt' ? metricValue.toString() : metricValue,
         timeUnixNano: (Date.now() * 1000000).toString(),
         attributes: [],
@@ -105,25 +100,19 @@ function createMetric(metricName, metricValue, metricUnit, metricType, valueType
 }
 
 function buildHttpMetrics() {
-    // One series per (method, endpoint). "Total requests" and "requests by method"
-    // are both derived in Grafana via sum(rate(...)) / sum by (method) (rate(...)) —
-    // no need to pre-aggregate here, same pattern as the requests_total dashboard.
-    return Object.values(requestCounts).map(({ method, path, count }) =>
-        createMetric('requests', count, '1', 'sum', 'asInt', { method, endpoint: path }),
+    return Object.values(requestCounts).map(({ method, path, statusCode, count }) =>
+        createMetric('requests', count, '1', 'sum', 'asInt', { method, endpoint: path, status: String(statusCode) }),
     );
 }
 
 function buildLatencyMetrics() {
     const metrics = [];
 
-    // Service endpoint latency: emitted as cumulative sum + count per endpoint,
-    // so Grafana computes average via rate(latency_sum) / rate(latency_count).
     Object.values(latencies).forEach(({ method, path, sum, count }) => {
         metrics.push(createMetric('service_endpoint_latency_sum', sum, 'ms', 'sum', 'asDouble', { method, endpoint: path }));
         metrics.push(createMetric('service_endpoint_latency_count', count, '1', 'sum', 'asInt', { method, endpoint: path }));
     });
 
-    // Pizza creation latency: same sum/count pattern, single series (factory call only).
     metrics.push(createMetric('pizza_creation_latency_sum', pizzaLatencySum, 'ms', 'sum', 'asDouble', {}));
     metrics.push(createMetric('pizza_creation_latency_count', pizzaLatencyCount, '1', 'sum', 'asInt', {}));
 
@@ -131,7 +120,6 @@ function buildLatencyMetrics() {
 }
 
 function buildUserMetrics() {
-    // Gauge, not a counter — represents current state, not an accumulating total.
     return [createMetric('active_users', getActiveUserCount(), '1', 'gauge', 'asInt', {})];
 }
 
@@ -143,7 +131,6 @@ function buildAuthMetrics() {
 }
 
 function buildSystemMetrics() {
-    // Gauges — current CPU/memory usage, not accumulating totals.
     return [
         createMetric('cpu_usage_percentage', getCpuUsagePercentage(), '%', 'gauge', 'asDouble', {}),
         createMetric('memory_usage_percentage', getMemoryUsagePercentage(), '%', 'gauge', 'asDouble', {}),

@@ -5,6 +5,7 @@ const { authRouter, setAuthUser } = require("./routes/authRouter.js");
 const orderRouter = require("./routes/orderRouter.js");
 const franchiseRouter = require("./routes/franchiseRouter.js");
 const userRouter = require("./routes/userRouter.js");
+const middleware = require("./middleware.js");
 const version = require("./version.json");
 const config = require("./config.js");
 
@@ -13,6 +14,7 @@ morgan.token('body', (req) => JSON.stringify(req.body));
 app.use(morgan(':method :url :status :response-time ms - :body'));
 app.use(express.json());
 app.use(setAuthUser);
+app.use(middleware.requestTracker);
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
