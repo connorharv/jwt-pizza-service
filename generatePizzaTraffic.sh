@@ -148,7 +148,7 @@ for i in 1 2 3 4 5; do
   simulate_cycling_user $i
 done
 
-# --- Failed pizza order (too many items), every ~90s instead of every 5 min ---
+# --- Failed pizza order (too many items), every ~125s instead of every 5 min ---
 while true; do
   token=$(login "d@jwt.com" "diner")
   echo "Login hungry diner..." $( [ -z "$token" ] && echo "false" || echo "true" )
@@ -163,7 +163,7 @@ while true; do
   sleep 5
   result=$(execute_curl "-X DELETE $host/api/auth -H \"Authorization: Bearer $token\"")
   echo "Logging out hungry diner..." $result
-  sleep 85
+  sleep 120
 done &
 pids+=($!)
 

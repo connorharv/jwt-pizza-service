@@ -6,3 +6,4 @@ dist
 .idea/
 .env
 src/config.js
+testing/

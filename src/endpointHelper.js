@@ -1,6 +1,11 @@
+const config = require("./config.js");
+const Logger = require('./logger');
+const logger = new Logger(config);
+
 class StatusCodeError extends Error {
   constructor(message, statusCode) {
     super(message);
+    logger.unhandledErrorLogger(this);
     this.statusCode = statusCode;
   }
 }

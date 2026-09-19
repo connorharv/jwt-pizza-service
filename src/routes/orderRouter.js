@@ -8,6 +8,9 @@ const orderRouter = express.Router();
 
 const metrics = require('../metrics.js');
 
+const Logger = require('../logger');
+const logger = new Logger(config);
+
 orderRouter.docs = [
   {
     method: "GET",
@@ -121,27 +124,31 @@ orderRouter.post(
       const price = orderReq.items.reduce((sum, item) => sum + item.price, 0);
       const start = process.hrtime.bigint();
 
-      let r, j;
-      try {
-        r = await fetch(`${config.factory.url}/api/order`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            authorization: `Bearer ${config.factory.apiKey}`,
-          },
-          body: JSON.stringify({
+        const orderInfo = {
             diner: { id: req.user.id, name: req.user.name, email: req.user.email },
             order,
-          }),
-        });
-        j = await r.json();
-      } catch (err) {
-        const latencyMs = Number(process.hrtime.bigint() - start) / 1e6;
-        metrics.trackPizzaPurchase(false, latencyMs, 0);
-        throw err;
-      }
+        };
 
-      const latencyMs = Number(process.hrtime.bigint() - start) / 1e6;
+        let r, j;
+        try {
+            r = await fetch(`${config.factory.url}/api/order`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    authorization: `Bearer ${config.factory.apiKey}`,
+                },
+                body: JSON.stringify(orderInfo),
+            });
+            j = await r.json();
+        } catch (err) {
+            const latencyMs = Number(process.hrtime.bigint() - start) / 1e6;
+            metrics.trackPizzaPurchase(false, latencyMs, 0);
+            logger.factoryLogger({ ...orderInfo, response: null, error: err.message });
+            throw err;
+        }
+
+        const latencyMs = Number(process.hrtime.bigint() - start) / 1e6;
+        logger.factoryLogger({ ...orderInfo, response: j });
 
       if (r.ok) {
         metrics.trackPizzaPurchase(true, latencyMs, price);
