@@ -103,10 +103,10 @@ jobs:
 
       - name: Annotate deployment in Grafana
         run: |
-          curl -s -X POST https://youraccountname.grafana.net/api/annotations \
+          curl -s -X POST https://lavendergodwit3511.grafana.net/api/annotations \
           -H "Authorization: Bearer ${{ secrets.GRAFANA_ACCESS_TOKEN }}" \
           -H "Content-Type: application/json" \
-          -d '{"dashboardUID":"xyz123", "panelId":15, "tags":["backend","production"], "text":"Version '"$version"' deployed" }'
+          -d '{"dashboardUID":"cokw28r", "tags":["backend","production"], "text":"Version '"$version"' deployed" }'
 
 
 
